@@ -36,15 +36,40 @@ export class KuboAdapter {
     return this._client;
   }
 
-  /** Upload raw bytes, returns CID string. */
-  async uploadBytes(bytes) {
-    const result = await this.client.add(bytes, {pin: true});
+  /**
+   * Upload a plain string to IPFS — React Native safe (no Blob needed).
+   * @param {string} text
+   * @returns {Promise<string>} CID
+   */
+  async uploadString(text) {
+    const result = await this.client.add(text, {pin: true});
     return result.cid.toString();
   }
 
-  /** Upload a named file object, returns CID string. */
-  async uploadFile(path, bytes) {
-    const result = await this.client.add({path, content: bytes}, {pin: true});
+  /**
+   * Download content as a UTF-8 string from a CID.
+   * @param {string} cid
+   * @returns {Promise<string>}
+   */
+  async downloadString(cid) {
+    const chunks = [];
+    for await (const chunk of this.client.cat(cid)) {
+      chunks.push(chunk);
+    }
+    const total = chunks.reduce((n, c) => n + c.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    for (const chunk of chunks) {
+      out.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return new TextDecoder().decode(out);
+  }
+
+  /** Upload raw bytes — may fail on React Native due to Blob limitation.
+   *  Use uploadString() with hex/base64 encoding instead for RN. */
+  async uploadBytes(bytes) {
+    const result = await this.client.add(bytes, {pin: true});
     return result.cid.toString();
   }
 

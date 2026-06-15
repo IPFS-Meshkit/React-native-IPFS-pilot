@@ -63,7 +63,9 @@ export async function send(senderId, recipientId, message, ctx) {
   };
 
   const topic = _topic(senderId, recipientId);
-  await ipfs.publish(topic, stringToBytes(JSON.stringify(envelope)));
+  // Publish as string bytes — React Native safe
+  const envelopeBytes = new TextEncoder().encode(JSON.stringify(envelope));
+  await ipfs.publish(topic, envelopeBytes);
 
   return {topic, envelope};
 }
