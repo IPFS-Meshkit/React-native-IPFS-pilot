@@ -7,9 +7,8 @@
  * stored as a base64 string alongside the raw key (hex).
  */
 
-import {gcm} from '@noble/ciphers/aes';
-import {randomBytes} from '@noble/ciphers/webcrypto';
-import {bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8} from '@noble/ciphers/utils';
+import {gcm} from '@noble/ciphers/aes.js';
+import {bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8, randomBytes} from '@noble/ciphers/utils.js';
 
 const IV_LENGTH = 12; // 96-bit IV for AES-GCM
 
@@ -61,4 +60,4 @@ export function decryptToString(cipherHex, ivHex, keyHex) {
   return bytesToUtf8(bytes);
 }
 
-export {bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8, randomBytes};
+export {bytesToHex, hexToBytes, utf8ToBytes, bytesToUtf8};

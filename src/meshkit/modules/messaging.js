@@ -25,7 +25,7 @@
  *   }
  */
 
-import {sha256} from '@noble/hashes/sha256';
+import {sha256} from '@noble/hashes/sha2.js';
 import {bytesToHex, encryptBytes, decryptBytes} from '../core/crypto';
 import {stringToBytes, bytesToString} from '../core/fragment';
 
