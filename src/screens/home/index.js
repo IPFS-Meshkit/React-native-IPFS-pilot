@@ -72,7 +72,6 @@ const HomeScreen = ({navigation}) => {
         mode="contained"
         buttonColor="#1565c0"
         style={styles.button}
-        icon="lock-outline"
         onPress={() => navigation.navigate('MeshkitStorage')}>
         mk.store / retrieve
       </Button>
@@ -80,7 +79,6 @@ const HomeScreen = ({navigation}) => {
         mode="contained"
         buttonColor="#1565c0"
         style={styles.button}
-        icon="file-lock-outline"
         onPress={() => navigation.navigate('MeshkitTransfer')}>
         mk.upload / share / download
       </Button>
@@ -88,7 +86,6 @@ const HomeScreen = ({navigation}) => {
         mode="contained"
         buttonColor="#1565c0"
         style={styles.button}
-        icon="message-lock-outline"
         onPress={() => navigation.navigate('MeshkitMessaging')}>
         mk.send / receive (E2EE)
       </Button>
@@ -96,7 +93,6 @@ const HomeScreen = ({navigation}) => {
         mode="contained"
         buttonColor="#b71c1c"
         style={styles.button}
-        icon="key-remove"
         onPress={() => navigation.navigate('MeshkitRevoke')}>
         mk.revoke
       </Button>
