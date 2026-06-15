@@ -1,24 +1,19 @@
 /**
- * Meshkit Kubo Adapter — Phase 1
+ * Meshkit Kubo Adapter — React Native safe
  *
- * Thin wrapper around kubo-rpc-client. This is the only file that imports
- * kubo-rpc-client. Swapping to Helia or another IPFS implementation in
- * future only requires changing this file.
+ * Upload rule: ALWAYS use { path, content: string } via addAll().
+ * Plain Uint8Array / Blob uploads throw "Unexpected input" or
+ * "Creating blob from ArrayBuffer not supported" in React Native.
  */
 
 import {create} from 'kubo-rpc-client';
 
 export class KuboAdapter {
-  /**
-   * @param {string[]} nodeUrls   List of IPFS RPC endpoints
-   */
   constructor(nodeUrls) {
     if (!nodeUrls || nodeUrls.length === 0) {
       throw new Error('[KuboAdapter] At least one node URL is required.');
     }
-    // Primary node — future versions can load-balance or failover across all
     this._primaryUrl = nodeUrls[0];
-    this._allUrls = nodeUrls;
     this._client = null;
   }
 
@@ -29,55 +24,76 @@ export class KuboAdapter {
 
   get client() {
     if (!this._client) {
-      throw new Error(
-        '[KuboAdapter] Not connected. Call Meshkit.init() first.',
-      );
+      throw new Error('[KuboAdapter] Not connected. Call Meshkit.init() first.');
     }
     return this._client;
   }
 
   /**
-   * Upload a plain string to IPFS — React Native safe (no Blob needed).
-   * @param {string} text
-   * @returns {Promise<string>} CID
+   * Upload a UTF-8 string to IPFS.
+   * Returns the file CID (not a directory CID).
    */
   async uploadString(text) {
-    const result = await this.client.add(text, {pin: true});
-    return result.cid.toString();
+    if (typeof text !== 'string') {
+      throw new Error('[KuboAdapter] uploadString requires a string, got ' + typeof text);
+    }
+
+    let fileCid = null;
+
+    // Same pattern as the working ipfs.add() demo — string content in a file object.
+    // wrapWithDirectory:false ensures the returned CID points directly to the file bytes.
+    for await (const entry of this.client.addAll(
+      [{path: 'manifest.json', content: text}],
+      {pin: true, wrapWithDirectory: false},
+    )) {
+      fileCid = entry.cid.toString();
+    }
+
+    if (!fileCid) {
+      throw new Error('[KuboAdapter] IPFS add returned no CID — is ipfs daemon running?');
+    }
+
+    return fileCid;
   }
 
-  /**
-   * Download content as a UTF-8 string from a CID.
-   * @param {string} cid
-   * @returns {Promise<string>}
-   */
+  /** Download a CID as a UTF-8 string. */
   async downloadString(cid) {
-    const chunks = [];
-    for await (const chunk of this.client.cat(cid)) {
-      chunks.push(chunk);
-    }
-    const total = chunks.reduce((n, c) => n + c.length, 0);
-    const out = new Uint8Array(total);
-    let offset = 0;
-    for (const chunk of chunks) {
-      out.set(chunk, offset);
-      offset += chunk.length;
-    }
-    return new TextDecoder().decode(out);
+    const bytes = await this._catBytes(cid);
+    return new TextDecoder().decode(bytes).trim();
   }
 
-  /** Upload raw bytes — may fail on React Native due to Blob limitation.
-   *  Use uploadString() with hex/base64 encoding instead for RN. */
-  async uploadBytes(bytes) {
-    const result = await this.client.add(bytes, {pin: true});
-    return result.cid.toString();
+  /** Publish a PubSub message (string or Uint8Array). */
+  async publish(topic, data) {
+    // PubSub accepts Uint8Array — encode string to bytes safely
+    const bytes =
+      typeof data === 'string'
+        ? new TextEncoder().encode(data)
+        : data instanceof Uint8Array
+          ? data
+          : new TextEncoder().encode(String(data));
+    await this.client.pubsub.publish(topic, bytes);
   }
 
-  /** Download all bytes for a CID. */
-  async downloadBytes(cid) {
+  async subscribe(topic, handler, options = {}) {
+    await this.client.pubsub.subscribe(topic, handler, options);
+  }
+
+  async unsubscribe(topic, handler) {
+    await this.client.pubsub.unsubscribe(topic, handler);
+  }
+
+  async id() {
+    return this.client.id();
+  }
+
+  async swarmConnect(addr) {
+    return this.client.swarm.connect(addr);
+  }
+
+  async _catBytes(cid) {
     const chunks = [];
     for await (const chunk of this.client.cat(cid)) {
-      chunks.push(chunk);
+      chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
     }
     const total = chunks.reduce((n, c) => n + c.length, 0);
     const out = new Uint8Array(total);
@@ -87,40 +103,5 @@ export class KuboAdapter {
       offset += chunk.length;
     }
     return out;
-  }
-
-  /** Pin a CID to keep it available. */
-  async pin(cid) {
-    await this.client.pin.add(cid);
-  }
-
-  /** Unpin a CID (node may GC it later). */
-  async unpin(cid) {
-    await this.client.pin.rm(cid);
-  }
-
-  /** Publish a PubSub message. */
-  async publish(topic, messageBytes) {
-    await this.client.pubsub.publish(topic, messageBytes);
-  }
-
-  /** Subscribe to a PubSub topic. */
-  async subscribe(topic, handler, options = {}) {
-    await this.client.pubsub.subscribe(topic, handler, options);
-  }
-
-  /** Unsubscribe from a PubSub topic. */
-  async unsubscribe(topic, handler) {
-    await this.client.pubsub.unsubscribe(topic, handler);
-  }
-
-  /** Get node identity info. */
-  async id() {
-    return this.client.id();
-  }
-
-  /** Connect to a swarm peer. */
-  async swarmConnect(addr) {
-    return this.client.swarm.connect(addr);
   }
 }

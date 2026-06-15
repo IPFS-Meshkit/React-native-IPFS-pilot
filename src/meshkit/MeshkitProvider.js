@@ -1,6 +1,5 @@
 /**
  * MeshkitProvider — React context wrapper for the Meshkit library.
- * Drop this in at the root of the app (same pattern as the existing IpfsHttpClientContext).
  */
 
 import React, {createContext, useContext, useState, useEffect} from 'react';
@@ -16,28 +15,31 @@ const IPFS_URL = Platform.select({
 
 export const MeshkitProvider = ({children}) => {
   const [mk, setMk] = useState(null);
-  const [status, setStatus] = useState('idle'); // idle | connecting | ready | error
+  const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     setStatus('connecting');
 
-    const instance = new Meshkit();
-    instance
-      .init({nodes: [IPFS_URL], encryption: 'aes-gcm-256'})
-      .then(() => {
+    (async () => {
+      try {
+        const instance = new Meshkit();
+        await instance.init({nodes: [IPFS_URL], encryption: 'aes-gcm-256'});
+        // Verify IPFS is actually reachable before marking ready
+        await instance.id();
         if (!cancelled) {
           setMk(instance);
           setStatus('ready');
+          setError(null);
         }
-      })
-      .catch(err => {
+      } catch (err) {
         if (!cancelled) {
-          setError(err.message);
+          setError(err.message || String(err));
           setStatus('error');
         }
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;

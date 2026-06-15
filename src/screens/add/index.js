@@ -2,6 +2,7 @@ import React from 'react';
 import {View, StyleSheet} from 'react-native';
 import {Button} from 'react-native-paper';
 import {inspect} from 'util';
+import {encode as b64encode} from 'base-64';
 import {useIpfs} from '../../ipfs-http-client';
 
 const AddScreen = () => {
@@ -24,24 +25,28 @@ const AddScreen = () => {
 
   const addUint8Array = async () => {
     console.log('Demo App .add Uint8Array start');
+    // RN-safe: encode bytes as base64 string — raw Uint8Array triggers Blob errors
+    const bytes = Uint8Array.from([49, 50, 51, 52, 53, 54, 55, 56, 57]);
+    const b64 = b64encode(String.fromCharCode(...bytes));
     const file = {
       path: '/tmp/rn-ipfs-add-uint8array',
-      content: Uint8Array.from([49, 50, 51, 52, 53, 54, 55, 56, 57]),
+      content: b64,
     };
     try {
-      console.log('Demo App .add Uint8Array', {
+      console.log('Demo App .add Uint8Array (as base64 string)', {
         result: inspect(await client.add(file)),
       });
     } catch (error) {
-      console.error('Demo App .add Uint8Array', {error});
+      console.error('Demo App .add Uint8Array', {error: error.message || error});
     }
   };
 
   const addNumbers = async () => {
     console.log('Demo App .add numbers start');
+    // RN-safe: join numbers as comma-separated string
     const file = {
       path: '/tmp/rn-ipfs-add-numbers',
-      content: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      content: [1, 2, 3, 4, 5, 6, 7, 8, 9].join(','),
     };
     try {
       console.log('Demo App .add numbers', {
