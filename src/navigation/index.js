@@ -7,6 +7,10 @@ import AddScreen from '../screens/add';
 import GetScreen from '../screens/get';
 import CatScreen from '../screens/cat';
 import PubsubScreen from '../screens/pubsub';
+import StorageScreen from '../screens/meshkit/StorageScreen';
+import TransferScreen from '../screens/meshkit/TransferScreen';
+import MessagingScreen from '../screens/meshkit/MessagingScreen';
+import RevocationScreen from '../screens/meshkit/RevocationScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +50,27 @@ const AppStack = () => (
       name="Pubsub"
       component={PubsubScreen}
       options={{title: 'ipfs.pubsub'}}
+    />
+    {/* ── Meshkit screens ── */}
+    <Stack.Screen
+      name="MeshkitStorage"
+      component={StorageScreen}
+      options={{title: 'mk.store / retrieve'}}
+    />
+    <Stack.Screen
+      name="MeshkitTransfer"
+      component={TransferScreen}
+      options={{title: 'mk.upload / share / download'}}
+    />
+    <Stack.Screen
+      name="MeshkitMessaging"
+      component={MessagingScreen}
+      options={{title: 'mk.send / receive'}}
+    />
+    <Stack.Screen
+      name="MeshkitRevoke"
+      component={RevocationScreen}
+      options={{title: 'mk.revoke'}}
     />
   </Stack.Navigator>
 );

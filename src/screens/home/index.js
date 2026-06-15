@@ -1,6 +1,6 @@
 import React from 'react';
-import {ScrollView, StyleSheet} from 'react-native';
-import {Button} from 'react-native-paper';
+import {ScrollView, StyleSheet, View} from 'react-native';
+import {Button, Text, Divider} from 'react-native-paper';
 
 const runGenerator = () => {
   const generator = function* () {
@@ -129,6 +129,42 @@ const HomeScreen = ({navigation}) => {
         onPress={() => console.warn('warn')}>
         console.warn
       </Button>
+
+      <Divider style={styles.divider} />
+      <Text variant="titleMedium" style={styles.sectionTitle}>🔐 Meshkit Library</Text>
+
+      <Button
+        mode="contained"
+        buttonColor="#1565c0"
+        style={styles.button}
+        icon="lock-outline"
+        onPress={() => navigation.navigate('MeshkitStorage')}>
+        mk.store / retrieve
+      </Button>
+      <Button
+        mode="contained"
+        buttonColor="#1565c0"
+        style={styles.button}
+        icon="file-lock-outline"
+        onPress={() => navigation.navigate('MeshkitTransfer')}>
+        mk.upload / share / download
+      </Button>
+      <Button
+        mode="contained"
+        buttonColor="#1565c0"
+        style={styles.button}
+        icon="message-lock-outline"
+        onPress={() => navigation.navigate('MeshkitMessaging')}>
+        mk.send / receive (E2EE)
+      </Button>
+      <Button
+        mode="contained"
+        buttonColor="#b71c1c"
+        style={styles.button}
+        icon="key-remove"
+        onPress={() => navigation.navigate('MeshkitRevoke')}>
+        mk.revoke
+      </Button>
     </ScrollView>
   );
 };
@@ -140,6 +176,13 @@ const styles = StyleSheet.create({
   },
   button: {
     marginVertical: 4,
+  },
+  divider: {
+    marginVertical: 12,
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
 });
 
