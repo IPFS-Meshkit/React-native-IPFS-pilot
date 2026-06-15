@@ -1,97 +1,127 @@
-import React from 'react';
-import {View, StyleSheet} from 'react-native';
-import {Button} from 'react-native-paper';
-import {multiaddr} from '@multiformats/multiaddr';
+import React, {useState, useRef} from 'react';
+import {ScrollView, StyleSheet} from 'react-native';
+import {Button, Text, Card} from 'react-native-paper';
 import {useIpfs} from '../../ipfs-http-client';
+import {formatError} from '../../ipfs-rn-utils';
 
 const TOPIC = 'react-native-ipfs-demo';
-const ADDR = multiaddr(
-  '/ip4/147.75.100.9/tcp/4001/p2p/Qmbut9Ywz9YEDrz8ySBSgWyJk41Uvm2QJPhwDJzJyGFsD6',
-);
-
-const handleMessage = (msg) => console.log('Demo app .pubsub message', {msg});
-const handleError = (error) => console.log('Demo app .pubsub error', {error});
 
 const PubsubScreen = () => {
-  const {
-    client: {pubsub, swarm},
-  } = useIpfs();
+  const {client} = useIpfs();
+  const {pubsub} = client;
+  const handlerRef = useRef(null);
+  const [log, setLog] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [subscribed, setSubscribed] = useState(false);
 
-  const connect = async () => {
-    try {
-      console.log('Demo App .pubsub start');
-      await swarm.connect(ADDR);
-      console.log('Demo App .pubsub connect', {addr: ADDR});
-    } catch (error) {
-      console.error('Demo App .pubsub connect', {addr: ADDR, error});
-    }
-  };
-
-  const disconnect = async () => {
-    try {
-      console.log('Demo App .disconnect start');
-      await swarm.disconnect(ADDR);
-      console.log('Demo App .pubsub disconnect', {addr: ADDR});
-    } catch (error) {
-      console.error('Demo App .pubsub disconnect', {addr: ADDR, error});
-    }
-  };
+  const addLog = (msg, isError = false) =>
+    setLog(prev => [
+      `[${new Date().toLocaleTimeString()}] ${isError ? 'ERROR: ' : ''}${msg}`,
+      ...prev,
+    ]);
 
   const subscribe = async () => {
     try {
-      console.log('Demo App .pubsub subscribe start');
-      await pubsub.subscribe(TOPIC, handleMessage, {onError: handleError});
-      console.log('Demo App .pubsub subscribe', {topic: TOPIC});
-    } catch (error) {
-      console.error('Demo App .pubsub subscribe', {topic: TOPIC, error});
+      const handler = msg => {
+        try {
+          const data = msg?.data ?? msg;
+          const text =
+            typeof data === 'string'
+              ? data
+              : new TextDecoder().decode(
+                  data instanceof Uint8Array ? data : new Uint8Array(data),
+                );
+          setMessages(prev => [text, ...prev]);
+          addLog(`Received: "${text}"`);
+        } catch (e) {
+          addLog(`Message parse error: ${formatError(e)}`, true);
+        }
+      };
+      handlerRef.current = handler;
+      await pubsub.subscribe(TOPIC, handler, {
+        onError: err => addLog(`PubSub error: ${formatError(err)}`, true),
+      });
+      setSubscribed(true);
+      addLog(`Subscribed to "${TOPIC}"`);
+    } catch (err) {
+      addLog(`Subscribe failed: ${formatError(err)}`, true);
     }
   };
 
   const unsubscribe = async () => {
     try {
-      console.log('Demo App .pubsub unsubscribe start');
-      await pubsub.unsubscribe(TOPIC, handleMessage);
-      console.log('Demo App .pubsub unsubscribe', {topic: TOPIC});
-    } catch (error) {
-      console.error('Demo App .pubsub unsubscribe', {topic: TOPIC, error});
+      if (handlerRef.current) {
+        await pubsub.unsubscribe(TOPIC, handlerRef.current);
+        handlerRef.current = null;
+      }
+      setSubscribed(false);
+      addLog('Unsubscribed');
+    } catch (err) {
+      addLog(`Unsubscribe failed: ${formatError(err)}`, true);
     }
   };
 
   const publish = async () => {
     try {
-      console.log('Demo App .pubsub publish start');
-      const msg = new TextEncoder().encode('hello');
-      await pubsub.publish(TOPIC, msg);
-      console.log('Demo App .pubsub publish', {topic: TOPIC, msg});
-    } catch (error) {
-      console.error('Demo App .pubsub publish', {error});
+      const text = `hello from RN at ${new Date().toLocaleTimeString()}`;
+      await pubsub.publish(TOPIC, new TextEncoder().encode(text));
+      addLog(`Published: "${text}"`);
+    } catch (err) {
+      addLog(`Publish failed: ${formatError(err)}`, true);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Button mode="contained" style={styles.button} onPress={connect}>
-        Connect
+    <ScrollView contentContainerStyle={styles.container}>
+      {!subscribed ? (
+        <Button mode="contained" onPress={subscribe}>
+          Subscribe
+        </Button>
+      ) : (
+        <Button mode="outlined" onPress={unsubscribe}>
+          Unsubscribe
+        </Button>
+      )}
+      <Button mode="contained" onPress={publish} disabled={!subscribed}>
+        Publish hello
       </Button>
-      <Button mode="contained" style={styles.button} onPress={disconnect}>
-        Disconnect
-      </Button>
-      <Button mode="contained" style={styles.button} onPress={subscribe}>
-        Subscribe
-      </Button>
-      <Button mode="contained" style={styles.button} onPress={unsubscribe}>
-        Unsubscribe
-      </Button>
-      <Button mode="contained" style={styles.button} onPress={publish}>
-        Publish
-      </Button>
-    </View>
+
+      {messages.length > 0 ? (
+        <Card style={styles.card}>
+          <Card.Title title="Messages received" />
+          <Card.Content>
+            {messages.map((m, i) => (
+              <Text key={i} style={styles.msg}>{m}</Text>
+            ))}
+          </Card.Content>
+        </Card>
+      ) : null}
+
+      <Card style={styles.card}>
+        <Card.Title title="Log" />
+        <Card.Content>
+          {log.length === 0 ? (
+            <Text style={styles.empty}>Subscribe then Publish.</Text>
+          ) : (
+            log.map((l, i) => (
+              <Text key={i} style={[styles.logLine, l.includes('ERROR') && styles.errorLine]}>
+                {l}
+              </Text>
+            ))
+          )}
+        </Card.Content>
+      </Card>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {padding: 16, gap: 12},
-  button: {marginVertical: 4},
+  card: {marginTop: 4},
+  msg: {fontSize: 14, marginBottom: 6},
+  empty: {color: '#999', fontStyle: 'italic'},
+  logLine: {fontSize: 11, fontFamily: 'monospace', marginBottom: 2},
+  errorLine: {color: '#c62828'},
 });
 
 export default PubsubScreen;
