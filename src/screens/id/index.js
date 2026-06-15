@@ -1,10 +1,9 @@
 import React, {useState} from 'react';
-import {View, StyleSheet, ScrollView, Text, Alert} from 'react-native';
-import {Button, Card} from 'react-native-paper';
-import {useIpfs} from '../../ipfs-http-client';
+import {ScrollView, StyleSheet, Alert} from 'react-native';
+import {Button, Card, Text} from 'react-native-paper';
+import {ipfsId, formatError} from '../../ipfs-rn-utils';
 
 const IdScreen = () => {
-  const {client} = useIpfs();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,11 +13,12 @@ const IdScreen = () => {
       setLoading(true);
       setError(null);
       setResult(null);
-      const data = await client.id();
+      const data = await ipfsId();
       setResult(JSON.stringify(data, null, 2));
     } catch (err) {
-      setError(err.message || String(err));
-      Alert.alert('Error', err.message || String(err));
+      const msg = formatError(err);
+      setError(msg);
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
@@ -31,16 +31,12 @@ const IdScreen = () => {
       </Button>
       {error ? (
         <Card style={styles.errorCard}>
-          <Card.Content>
-            <Text style={styles.errorText}>{error}</Text>
-          </Card.Content>
+          <Card.Content><Text style={styles.errorText}>{error}</Text></Card.Content>
         </Card>
       ) : null}
       {result ? (
         <Card style={styles.resultCard}>
-          <Card.Content>
-            <Text style={styles.resultText}>{result}</Text>
-          </Card.Content>
+          <Card.Content><Text style={styles.resultText}>{result}</Text></Card.Content>
         </Card>
       ) : null}
     </ScrollView>

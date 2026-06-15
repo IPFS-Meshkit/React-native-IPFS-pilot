@@ -1,11 +1,9 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 import {Button, Text, Card} from 'react-native-paper';
-import {useIpfs} from '../../ipfs-http-client';
 import {addTextFile, formatError} from '../../ipfs-rn-utils';
 
 const AddScreen = () => {
-  const {client} = useIpfs();
   const [log, setLog] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -19,7 +17,7 @@ const AddScreen = () => {
     setLoading(true);
     addLog(`${label} — uploading...`);
     try {
-      const result = await addTextFile(client, filename, content);
+      const result = await addTextFile(filename, content);
       addLog(`${label} OK — CID: ${result.cid}`);
     } catch (err) {
       addLog(`${label} failed: ${formatError(err)}`, true);
@@ -30,29 +28,15 @@ const AddScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Button
-        mode="contained"
-        style={styles.button}
-        loading={loading}
-        disabled={loading}
-        onPress={() =>
-          runAdd('Add string', 'demo-string.txt', '邑中陽裏人也，姓劉氏。母媼嘗息大澤之陂，夢與神遇')
-        }>
+      <Button mode="contained" style={styles.button} loading={loading} disabled={loading}
+        onPress={() => runAdd('Add string', 'demo-string.txt', '邑中陽裏人也，姓劉氏。母媼嘗息大澤之陂，夢與神遇')}>
         Add string
       </Button>
-      <Button
-        mode="contained"
-        style={styles.button}
-        loading={loading}
-        disabled={loading}
+      <Button mode="contained" style={styles.button} loading={loading} disabled={loading}
         onPress={() => runAdd('Add numbers', 'demo-numbers.txt', '1,2,3,4,5,6,7,8,9')}>
         Add numbers (as string)
       </Button>
-      <Button
-        mode="contained"
-        style={styles.button}
-        loading={loading}
-        disabled={loading}
+      <Button mode="contained" style={styles.button} loading={loading} disabled={loading}
         onPress={() => runAdd('Add text file', 'demo-hello.txt', 'Hello IPFS from React Native!')}>
         Add hello.txt
       </Button>
@@ -64,9 +48,7 @@ const AddScreen = () => {
             <Text style={styles.empty}>Tap a button above.</Text>
           ) : (
             log.map((line, i) => (
-              <Text key={i} style={[styles.logLine, line.includes('ERROR') && styles.errorLine]}>
-                {line}
-              </Text>
+              <Text key={i} style={[styles.logLine, line.includes('ERROR') && styles.errorLine]}>{line}</Text>
             ))
           )}
         </Card.Content>

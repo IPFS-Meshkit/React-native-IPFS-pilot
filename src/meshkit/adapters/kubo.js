@@ -1,9 +1,13 @@
 /**
- * Meshkit Kubo Adapter — React Native safe
+ * Meshkit Kubo Adapter — uses raw HTTP API (React Native safe)
  */
 
+import {
+  addTextFile,
+  catToString,
+  ipfsId,
+} from '../../ipfs-rn-utils';
 import {create} from 'kubo-rpc-client';
-import {addTextFile, catToString, formatError} from '../../ipfs-rn-utils';
 
 export class KuboAdapter {
   constructor(nodeUrls) {
@@ -15,6 +19,7 @@ export class KuboAdapter {
   }
 
   connect() {
+    // kubo client kept only for pubsub (optional)
     this._client = create({url: this._primaryUrl});
     return this._client;
   }
@@ -30,12 +35,12 @@ export class KuboAdapter {
     if (typeof text !== 'string') {
       throw new Error('[KuboAdapter] uploadString requires a string');
     }
-    const result = await addTextFile(this.client, 'manifest.json', text);
+    const result = await addTextFile('manifest.json', text);
     return result.cid;
   }
 
   async downloadString(cid) {
-    return catToString(this.client, cid).then(s => s.trim());
+    return catToString(cid);
   }
 
   async publish(topic, data) {
@@ -52,12 +57,10 @@ export class KuboAdapter {
   }
 
   async id() {
-    return this.client.id();
+    return ipfsId();
   }
 
   async swarmConnect(addr) {
     return this.client.swarm.connect(addr);
   }
 }
-
-export {formatError};

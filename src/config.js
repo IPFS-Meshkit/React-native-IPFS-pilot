@@ -5,4 +5,6 @@ const HTTP_CLIENT_URL = Platform.select({
   android: 'http://10.0.2.2:5001',
 });
 
-export {HTTP_CLIENT_URL};
+const IPFS_API = `${HTTP_CLIENT_URL}/api/v0`;
+
+export {HTTP_CLIENT_URL, IPFS_API};

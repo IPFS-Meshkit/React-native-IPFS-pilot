@@ -1,11 +1,9 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 import {Button, Text, Card} from 'react-native-paper';
-import {useIpfs} from '../../ipfs-http-client';
-import {addDirectory, formatError} from '../../ipfs-rn-utils';
+import {addDirectory, getDirectoryFiles, formatError} from '../../ipfs-rn-utils';
 
 const GetScreen = () => {
-  const {client} = useIpfs();
   const [files, setFiles] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,31 +13,11 @@ const GetScreen = () => {
     setError('');
     setFiles([]);
     try {
-      const dir = await addDirectory(client, [
+      const dir = await addDirectory([
         {path: 'get-demo/readme.txt', content: 'README content from get()'},
         {path: 'get-demo/notes.txt', content: 'Notes content from get()'},
       ]);
-
-      const results = [];
-      for await (const file of client.get(dir.cid)) {
-        if (!file.content) continue;
-        const chunks = [];
-        for await (const chunk of file.content) {
-          chunks.push(chunk instanceof Uint8Array ? chunk : new Uint8Array(chunk));
-        }
-        const total = chunks.reduce((n, c) => n + c.length, 0);
-        const out = new Uint8Array(total);
-        let offset = 0;
-        for (const c of chunks) {
-          out.set(c, offset);
-          offset += c.length;
-        }
-        results.push({
-          path: file.path,
-          content: new TextDecoder().decode(out),
-        });
-      }
-      setFiles(results);
+      setFiles(await getDirectoryFiles(dir.cid));
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -52,15 +30,11 @@ const GetScreen = () => {
       <Button mode="contained" loading={loading} disabled={loading} onPress={setupAndGet}>
         Create folder and get()
       </Button>
-
       {error ? <Text style={styles.error}>{error}</Text> : null}
-
       {files.map((f, i) => (
         <Card key={i} style={styles.card}>
           <Card.Title title={f.path} />
-          <Card.Content>
-            <Text style={styles.content}>{f.content}</Text>
-          </Card.Content>
+          <Card.Content><Text style={styles.content}>{f.content}</Text></Card.Content>
         </Card>
       ))}
     </ScrollView>

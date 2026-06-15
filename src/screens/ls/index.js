@@ -1,11 +1,9 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 import {Button, Text, Card} from 'react-native-paper';
-import {useIpfs} from '../../ipfs-http-client';
 import {addDirectory, lsEntries, formatError} from '../../ipfs-rn-utils';
 
 const LsScreen = () => {
-  const {client} = useIpfs();
   const [entries, setEntries] = useState([]);
   const [dirCid, setDirCid] = useState('');
   const [error, setError] = useState('');
@@ -16,13 +14,12 @@ const LsScreen = () => {
     setError('');
     setEntries([]);
     try {
-      const dir = await addDirectory(client, [
+      const dir = await addDirectory([
         {path: 'demo-folder/file1.txt', content: 'First file'},
         {path: 'demo-folder/file2.txt', content: 'Second file'},
       ]);
       setDirCid(dir.cid);
-      const list = await lsEntries(client, dir.cid);
-      setEntries(list);
+      setEntries(await lsEntries(dir.cid));
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -35,10 +32,8 @@ const LsScreen = () => {
       <Button mode="contained" loading={loading} disabled={loading} onPress={setupAndLs}>
         Create folder and ls()
       </Button>
-
       {dirCid ? <Text style={styles.cid}>Directory CID: {dirCid}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
-
       {entries.length > 0 ? (
         <Card style={styles.card}>
           <Card.Title title={`ls() — ${entries.length} entries`} />

@@ -1,11 +1,9 @@
 import React, {useState} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 import {Button, TextInput, Text, Card} from 'react-native-paper';
-import {useIpfs} from '../../ipfs-http-client';
 import {addTextFile, catToString, formatError} from '../../ipfs-rn-utils';
 
 const CatScreen = () => {
-  const {client} = useIpfs();
   const [cid, setCid] = useState('');
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
@@ -16,11 +14,9 @@ const CatScreen = () => {
     setError('');
     setContent('');
     try {
-      // Add fresh data locally, then cat it back — always works on local node
-      const added = await addTextFile(client, 'cat-demo.txt', 'Cat demo content — ' + Date.now());
+      const added = await addTextFile('cat-demo.txt', 'Cat demo content — ' + Date.now());
       setCid(added.cid);
-      const text = await catToString(client, added.cid);
-      setContent(text);
+      setContent(await catToString(added.cid));
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -37,8 +33,7 @@ const CatScreen = () => {
     setError('');
     setContent('');
     try {
-      const text = await catToString(client, cid.trim());
-      setContent(text);
+      setContent(await catToString(cid.trim()));
     } catch (err) {
       setError(formatError(err));
     } finally {
@@ -51,25 +46,15 @@ const CatScreen = () => {
       <Button mode="contained" loading={loading} disabled={loading} onPress={setupAndCat}>
         Add test file and cat it
       </Button>
-
-      <TextInput
-        label="CID to cat"
-        value={cid}
-        onChangeText={setCid}
-        mode="outlined"
-        style={styles.input}
-      />
+      <TextInput label="CID to cat" value={cid} onChangeText={setCid} mode="outlined" style={styles.input} />
       <Button mode="outlined" loading={loading} disabled={loading} onPress={catByCid}>
         Cat this CID
       </Button>
-
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {content ? (
         <Card style={styles.card}>
           <Card.Title title="Content" />
-          <Card.Content>
-            <Text style={styles.content}>{content}</Text>
-          </Card.Content>
+          <Card.Content><Text style={styles.content}>{content}</Text></Card.Content>
         </Card>
       ) : null}
     </ScrollView>
