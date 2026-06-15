@@ -66,6 +66,44 @@ const readableStreamTest1 = async () => {
 const HomeScreen = ({navigation}) => {
   return (
     <ScrollView contentContainerStyle={styles.container}>
+
+      <Text variant="titleMedium" style={styles.sectionTitle}>🔐 Meshkit Library</Text>
+      <Button
+        mode="contained"
+        buttonColor="#1565c0"
+        style={styles.button}
+        icon="lock-outline"
+        onPress={() => navigation.navigate('MeshkitStorage')}>
+        mk.store / retrieve
+      </Button>
+      <Button
+        mode="contained"
+        buttonColor="#1565c0"
+        style={styles.button}
+        icon="file-lock-outline"
+        onPress={() => navigation.navigate('MeshkitTransfer')}>
+        mk.upload / share / download
+      </Button>
+      <Button
+        mode="contained"
+        buttonColor="#1565c0"
+        style={styles.button}
+        icon="message-lock-outline"
+        onPress={() => navigation.navigate('MeshkitMessaging')}>
+        mk.send / receive (E2EE)
+      </Button>
+      <Button
+        mode="contained"
+        buttonColor="#b71c1c"
+        style={styles.button}
+        icon="key-remove"
+        onPress={() => navigation.navigate('MeshkitRevoke')}>
+        mk.revoke
+      </Button>
+
+      <Divider style={styles.divider} />
+      <Text variant="titleMedium" style={styles.sectionTitle}>⚙️ Raw IPFS</Text>
+
       <Button
         mode="contained"
         style={styles.button}
@@ -130,41 +168,6 @@ const HomeScreen = ({navigation}) => {
         console.warn
       </Button>
 
-      <Divider style={styles.divider} />
-      <Text variant="titleMedium" style={styles.sectionTitle}>🔐 Meshkit Library</Text>
-
-      <Button
-        mode="contained"
-        buttonColor="#1565c0"
-        style={styles.button}
-        icon="lock-outline"
-        onPress={() => navigation.navigate('MeshkitStorage')}>
-        mk.store / retrieve
-      </Button>
-      <Button
-        mode="contained"
-        buttonColor="#1565c0"
-        style={styles.button}
-        icon="file-lock-outline"
-        onPress={() => navigation.navigate('MeshkitTransfer')}>
-        mk.upload / share / download
-      </Button>
-      <Button
-        mode="contained"
-        buttonColor="#1565c0"
-        style={styles.button}
-        icon="message-lock-outline"
-        onPress={() => navigation.navigate('MeshkitMessaging')}>
-        mk.send / receive (E2EE)
-      </Button>
-      <Button
-        mode="contained"
-        buttonColor="#b71c1c"
-        style={styles.button}
-        icon="key-remove"
-        onPress={() => navigation.navigate('MeshkitRevoke')}>
-        mk.revoke
-      </Button>
     </ScrollView>
   );
 };
