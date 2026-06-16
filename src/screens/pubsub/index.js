@@ -1,15 +1,12 @@
 import React, {useState, useRef} from 'react';
 import {ScrollView, StyleSheet} from 'react-native';
 import {Button, Text, Card} from 'react-native-paper';
-import {useIpfs} from '../../ipfs-http-client';
-import {formatError} from '../../ipfs-rn-utils';
+import {pubsubPublish, pubsubSubscribe, formatError} from '../../ipfs-rn-utils';
 
 const TOPIC = 'react-native-ipfs-demo';
 
 const PubsubScreen = () => {
-  const {client} = useIpfs();
-  const {pubsub} = client;
-  const handlerRef = useRef(null);
+  const cancelRef = useRef(null);
   const [log, setLog] = useState([]);
   const [messages, setMessages] = useState([]);
   const [subscribed, setSubscribed] = useState(false);
@@ -20,27 +17,17 @@ const PubsubScreen = () => {
       ...prev,
     ]);
 
-  const subscribe = async () => {
+  const subscribe = () => {
     try {
-      const handler = msg => {
-        try {
-          const data = msg?.data ?? msg;
-          const text =
-            typeof data === 'string'
-              ? data
-              : new TextDecoder().decode(
-                  data instanceof Uint8Array ? data : new Uint8Array(data),
-                );
-          setMessages(prev => [text, ...prev]);
-          addLog(`Received: "${text}"`);
-        } catch (e) {
-          addLog(`Message parse error: ${formatError(e)}`, true);
-        }
-      };
-      handlerRef.current = handler;
-      await pubsub.subscribe(TOPIC, handler, {
-        onError: err => addLog(`PubSub error: ${formatError(err)}`, true),
-      });
+      const cancel = pubsubSubscribe(
+        TOPIC,
+        ({from, data}) => {
+          setMessages(prev => [data, ...prev]);
+          addLog(`Received: "${data}"`);
+        },
+        err => addLog(`PubSub error: ${formatError(err)}`, true),
+      );
+      cancelRef.current = cancel;
       setSubscribed(true);
       addLog(`Subscribed to "${TOPIC}"`);
     } catch (err) {
@@ -48,23 +35,19 @@ const PubsubScreen = () => {
     }
   };
 
-  const unsubscribe = async () => {
-    try {
-      if (handlerRef.current) {
-        await pubsub.unsubscribe(TOPIC, handlerRef.current);
-        handlerRef.current = null;
-      }
-      setSubscribed(false);
-      addLog('Unsubscribed');
-    } catch (err) {
-      addLog(`Unsubscribe failed: ${formatError(err)}`, true);
+  const unsubscribe = () => {
+    if (cancelRef.current) {
+      cancelRef.current();
+      cancelRef.current = null;
     }
+    setSubscribed(false);
+    addLog('Unsubscribed');
   };
 
   const publish = async () => {
     try {
       const text = `hello from RN at ${new Date().toLocaleTimeString()}`;
-      await pubsub.publish(TOPIC, new TextEncoder().encode(text));
+      await pubsubPublish(TOPIC, text);
       addLog(`Published: "${text}"`);
     } catch (err) {
       addLog(`Publish failed: ${formatError(err)}`, true);
@@ -91,7 +74,9 @@ const PubsubScreen = () => {
           <Card.Title title="Messages received" />
           <Card.Content>
             {messages.map((m, i) => (
-              <Text key={i} style={styles.msg}>{m}</Text>
+              <Text key={i} style={styles.msg}>
+                {m}
+              </Text>
             ))}
           </Card.Content>
         </Card>
@@ -104,7 +89,12 @@ const PubsubScreen = () => {
             <Text style={styles.empty}>Subscribe then Publish.</Text>
           ) : (
             log.map((l, i) => (
-              <Text key={i} style={[styles.logLine, l.includes('ERROR') && styles.errorLine]}>
+              <Text
+                key={i}
+                style={[
+                  styles.logLine,
+                  l.includes('ERROR') && styles.errorLine,
+                ]}>
                 {l}
               </Text>
             ))

@@ -1,18 +1,18 @@
-import React, {createContext, useContext, useState} from 'react';
-import {create} from 'kubo-rpc-client';
-import {HTTP_CLIENT_URL} from './config';
+/**
+ * Thin compatibility shim — no longer creates a kubo-rpc-client.
+ * All raw IPFS screens now import directly from ipfs-rn-utils.
+ * This file only exists to avoid breaking the App.js Provider wrapper.
+ */
+import React, {createContext, useContext} from 'react';
+import * as utils from './ipfs-rn-utils';
 
-const IpfsHttpClientContext = createContext();
+const IpfsHttpClientContext = createContext({client: utils});
 
-const Provider = ({children}) => {
-  const [client] = useState(() => create({url: HTTP_CLIENT_URL}));
-
-  return (
-    <IpfsHttpClientContext.Provider value={{client}}>
-      {children}
-    </IpfsHttpClientContext.Provider>
-  );
-};
+const Provider = ({children}) => (
+  <IpfsHttpClientContext.Provider value={{client: utils}}>
+    {children}
+  </IpfsHttpClientContext.Provider>
+);
 
 const useIpfs = () => useContext(IpfsHttpClientContext);
 

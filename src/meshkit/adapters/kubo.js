@@ -1,13 +1,16 @@
 /**
- * Meshkit Kubo Adapter — uses raw HTTP API (React Native safe)
+ * Meshkit Kubo Adapter — fully raw HTTP API (React Native safe)
+ * No kubo-rpc-client dependency; all calls go directly to Kubo's HTTP API.
  */
 
+import {IPFS_API} from '../../config';
 import {
   addTextFile,
   catToString,
   ipfsId,
+  pubsubPublish,
+  pubsubSubscribe,
 } from '../../ipfs-rn-utils';
-import {create} from 'kubo-rpc-client';
 
 export class KuboAdapter {
   constructor(nodeUrls) {
@@ -15,20 +18,13 @@ export class KuboAdapter {
       throw new Error('[KuboAdapter] At least one node URL is required.');
     }
     this._primaryUrl = nodeUrls[0];
-    this._client = null;
+    // Map<handler, cancelFn> — used to cancel subscriptions
+    this._cancelFns = new Map();
   }
 
   connect() {
-    // kubo client kept only for pubsub (optional)
-    this._client = create({url: this._primaryUrl});
-    return this._client;
-  }
-
-  get client() {
-    if (!this._client) {
-      throw new Error('[KuboAdapter] Not connected. Call Meshkit.init() first.');
-    }
-    return this._client;
+    // No client to create — all calls are raw HTTP
+    return this;
   }
 
   async uploadString(text) {
@@ -44,16 +40,28 @@ export class KuboAdapter {
   }
 
   async publish(topic, data) {
-    const text = typeof data === 'string' ? data : new TextDecoder().decode(data);
-    await this.client.pubsub.publish(topic, new TextEncoder().encode(text));
+    const text =
+      typeof data === 'string' ? data : new TextDecoder().decode(data);
+    await pubsubPublish(topic, text);
   }
 
-  async subscribe(topic, handler, options = {}) {
-    await this.client.pubsub.subscribe(topic, handler, options);
+  subscribe(topic, handler, options = {}) {
+    const cancel = pubsubSubscribe(
+      topic,
+      msg => handler(msg),
+      err => options.onError && options.onError(err),
+    );
+    this._cancelFns.set(handler, cancel);
+    return Promise.resolve();
   }
 
-  async unsubscribe(topic, handler) {
-    await this.client.pubsub.unsubscribe(topic, handler);
+  unsubscribe(topic, handler) {
+    const cancel = this._cancelFns.get(handler);
+    if (cancel) {
+      cancel();
+      this._cancelFns.delete(handler);
+    }
+    return Promise.resolve();
   }
 
   async id() {
@@ -61,6 +69,14 @@ export class KuboAdapter {
   }
 
   async swarmConnect(addr) {
-    return this.client.swarm.connect(addr);
+    const res = await fetch(
+      `${IPFS_API}/swarm/connect?arg=${encodeURIComponent(addr)}`,
+      {method: 'POST'},
+    );
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json.Message || 'swarm connect failed');
+    }
+    return json;
   }
 }
