@@ -8,6 +8,12 @@ Upgraded from the original [ipfs-shipyard/react-native-ipfs-demo](https://github
 
 ---
 
+## System Architecture
+
+![IPFS Demo App — System Architecture](./assets/architecture.png)
+
+---
+
 ## Features
 
 | Screen | What it does |
