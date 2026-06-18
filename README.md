@@ -8,6 +8,12 @@ Upgraded from the original [ipfs-shipyard/react-native-ipfs-demo](https://github
 
 ---
 
+## Demo Video
+
+[▶ Watch the demo on YouTube](https://www.youtube.com/shorts/CegvpoL__JI)
+
+---
+
 ## System Architecture
 
 ![IPFS Demo App — System Architecture](./assets/architecture.png)
