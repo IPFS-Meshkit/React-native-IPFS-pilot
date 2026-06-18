@@ -1,97 +1,83 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# IPFS Demo — React Native 0.86
 
-# Getting Started
+A React Native mobile app that demonstrates how **IPFS (InterPlanetary File System)** works on a mobile device. IPFS is a decentralised, peer-to-peer protocol for storing and sharing files — instead of fetching data from a central server, files are identified by their content (a CID) and can be retrieved from any peer on the network.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+This app connects to a locally running **IPFS Kubo daemon** via its HTTP RPC API and lets you interact with it directly from your iOS or Android device — no backend, no server, pure peer-to-peer from mobile.
 
-## Step 1: Start Metro
+Upgraded from the original [ipfs-shipyard/react-native-ipfs-demo](https://github.com/ipfs-shipyard/react-native-ipfs-demo) (React Native 0.63) to **React Native 0.86** with a fully modernised dependency stack.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+---
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Features
 
+| Screen | What it does |
+|---|---|
+| **ID** | Fetch your IPFS node's identity — Peer ID, agent version, protocol version, and listen addresses |
+| **Add** | Add text or binary data to IPFS. Returns a CID (content address) you can share with anyone on the network |
+| **Cat** | Read and display content from IPFS by providing a CID |
+| **LS** | List all files and folders inside an IPFS directory by CID |
+| **Get** | Download a complete file tree from IPFS by CID |
+| **PubSub** | Real-time messaging — connect to a peer, subscribe to a topic, and publish messages across the network |
+
+---
+
+## Usage
+
+Each screen is a self-contained demo:
+1. Make sure your IPFS daemon is running (see setup below)
+2. Open the app — tap any operation from the Home screen
+3. Hit the button — result appears on screen instantly
+4. For **PubSub**, you need a second IPFS peer to connect to
+
+---
+
+## What Was Upgraded
+
+| Package | Before | After |
+|---|---|---|
+| React Native | 0.63.4 | 0.86.0 |
+| React | 16.9.0 | 19.2.3 |
+| IPFS client | `ipfs-http-client` | `kubo-rpc-client` |
+| Navigation | `@react-navigation/stack` v5 | `native-stack` v7 |
+| Reanimated | v1 | v4 |
+| Polyfills | 3 patch files | clean shims, zero patches |
+
+---
+
+## Prerequisites
+
+- Node.js >= 22
+- Xcode 16+ (iOS)
+- CocoaPods
+- IPFS Kubo daemon running locally
+
+---
+
+## Setup & Run
+
+**1. Install dependencies**
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+npm install
+cd ios && pod install && cd ..
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
+**2. Configure IPFS daemon CORS (first time only)**
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
+ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST", "GET"]'
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
+**3. Start IPFS daemon**
 ```sh
-bundle install
+ipfs daemon
 ```
 
-Then, and every time you update your native dependencies, run:
-
+**4. Start Metro (new terminal)**
 ```sh
-bundle exec pod install
+npx react-native start
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
+**5. Run on iOS (another terminal)**
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npx react-native run-ios
 ```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
